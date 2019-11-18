@@ -514,38 +514,43 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 	@Override
 	public void refresh() throws BeansException, IllegalStateException {
 		synchronized (this.startupShutdownMonitor) {
-			// Prepare this context for refreshing.
+
+			//准备工作包括设置启动时间，是否激活标识位，初始化属性源(property source)配置
 			prepareRefresh();
 
-			// Tell the subclass to refresh the internal bean factory.
+			//返回一个factory，为什么需要返回一个工厂？ 因为要对工厂进行初始化
 			ConfigurableListableBeanFactory beanFactory = obtainFreshBeanFactory();
 
-			// Prepare the bean factory for use in this context.
+			// 准备工厂
 			prepareBeanFactory(beanFactory);
 
 			try {
 				// Allows post-processing of the bean factory in context subclasses.
 				postProcessBeanFactory(beanFactory);
 
-				// Invoke factory processors registered as beans in the context.
+				/**
+				 * 在spring的环境中去执行已经被注册的factory processors
+				 * 设置执行自定义的ProcessBeanFactory 和 spring内部自己定义的beanFactory
+				 * scan ---> put map ---> invokeBeanFactoryPostProcessor（自定义的和内置的）
+				 */
 				invokeBeanFactoryPostProcessors(beanFactory);
 
-				// Register bean processors that intercept bean creation.
+				//注册beanPostProcessor
 				registerBeanPostProcessors(beanFactory);
 
-				// Initialize message source for this context.
+				/*Initialize message source for this context.*/
 				initMessageSource();
 
-				// Initialize event multicaster for this context.
+				//初始化应用事件广播器
 				initApplicationEventMulticaster();
 
-				// Initialize other special beans in specific context subclasses.
+				/*Initialize other special beans in specific context subclasses.*/
 				onRefresh();
 
-				// Check for listener beans and register them.
+
 				registerListeners();
 
-				// Instantiate all remaining (non-lazy-init) singletons.
+				//重点：执行完finishBeanFactoryInitialization，bean加载完了，new对象 单例
 				finishBeanFactoryInitialization(beanFactory);
 
 				// Last step: publish corresponding event.
@@ -620,7 +625,8 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 	/**
 	 * <p>Replace any stub property sources with actual instances.
 	 * @see org.springframework.core.env.PropertySource.StubPropertySource
-	 * @see org.springframework.web.context.support.WebApplicationContextUtils#initServletPropertySources
+	 * @see org.springframework.web.context.support
+	 * 												.WebApplicationContextUtils#initServletPropertySources
 	 */
 	protected void initPropertySources() {
 		// For subclasses: do nothing by default.
@@ -861,19 +867,19 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 			beanFactory.addEmbeddedValueResolver(strVal -> getEnvironment().resolvePlaceholders(strVal));
 		}
 
-		// Initialize LoadTimeWeaverAware beans early to allow for registering their transformers early.
+		/*Initialize LoadTimeWeaverAware beans early to allow for registering their transformers early.*/
 		String[] weaverAwareNames = beanFactory.getBeanNamesForType(LoadTimeWeaverAware.class, false, false);
 		for (String weaverAwareName : weaverAwareNames) {
 			getBean(weaverAwareName);
 		}
 
-		// Stop using the temporary ClassLoader for type matching.
+		/*Stop using the temporary ClassLoader for type matching.*/
 		beanFactory.setTempClassLoader(null);
 
-		// Allow for caching all bean definition metadata, not expecting further changes.
+		/*Allow for caching all bean definition metadata, not expecting further changes.*/
 		beanFactory.freezeConfiguration();
 
-		// Instantiate all remaining (non-lazy-init) singletons.
+		//实例化所有的单例对象  ctrl+alt+B进入代码实现处
 		beanFactory.preInstantiateSingletons();
 	}
 

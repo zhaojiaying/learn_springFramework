@@ -490,7 +490,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 			mbdToUse.setBeanClass(resolvedClass);
 		}
 
-		// Prepare method overrides.
+		//处理lookup-method 和 replace-method 配置，spring将这两个配置统称为override method
 		try {
 			mbdToUse.prepareMethodOverrides();
 		}
@@ -500,7 +500,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 		}
 
 		try {
-			// Give BeanPostProcessors a chance to return a proxy instead of the target bean instance.
+			//第一次应用spring的后置处理器，在bean初始化前 应用后置处理，如果后置处理返回的bean不为空，则直接调用
 			Object bean = resolveBeforeInstantiation(beanName, mbdToUse);
 			if (bean != null) {
 				return bean;

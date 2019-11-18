@@ -226,13 +226,22 @@ public class AnnotatedBeanDefinitionReader {
 		AnnotationConfigUtils.processCommonDefinitionAnnotations(abd);
 		if (qualifiers != null) {
 			for (Class<? extends Annotation> qualifier : qualifiers) {
+				/**
+				 * 如果配置了@Primary注解，则为首选
+				 */
 				if (Primary.class == qualifier) {
 					abd.setPrimary(true);
 				}
+				/**
+				 * 懒加载
+				 */
 				else if (Lazy.class == qualifier) {
 					abd.setLazyInit(true);
 				}
 				else {
+					/**
+					 * 如果使用了除@Primary和@lazy以外的其他注解，则为该bean添加一个
+					 */
 					abd.addQualifier(new AutowireCandidateQualifier(qualifier));
 				}
 			}
@@ -241,8 +250,19 @@ public class AnnotatedBeanDefinitionReader {
 			customizer.customize(abd);
 		}
 
+		//BeanDefinitionHolder是一个数据结构
 		BeanDefinitionHolder definitionHolder = new BeanDefinitionHolder(abd, beanName);
+		/**
+		 * ScopeMetadata 这个知识点比较复杂，结合web去理解
+		 * springmvc联系起来
+		 */
 		definitionHolder = AnnotationConfigUtils.applyScopedProxyMode(scopeMetadata, definitionHolder, this.registry);
+		/**
+		 * 把上述的这个数据结构注册给registry
+		 * registry就是AnnotationConfigApplicationContext在初始化的时候
+		 * 通过调用父类的构造方法实例化了一个DefaultListableBeanFactory
+		 * registerBeanDefinition()方法里面就是把definitionHolder这个数据结构包含的信息
+		 */
 		BeanDefinitionReaderUtils.registerBeanDefinition(definitionHolder, this.registry);
 	}
 

@@ -242,10 +242,11 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 		final String beanName = transformedBeanName(name);
 		Object bean;
 
-		// Eagerly check singleton cache for manually registered singletons.
+		//重点方法：getSingleton
 		Object sharedInstance = getSingleton(beanName);
 		if (sharedInstance != null && args == null) {
 			if (logger.isTraceEnabled()) {
+				//isSingletonCurrentlyInCreation 判断这个对象是否在创建过程当中（因为bean有循环依赖，所以bean有中间状态）
 				if (isSingletonCurrentlyInCreation(beanName)) {
 					logger.trace("Returning eagerly cached instance of singleton bean '" + beanName +
 							"' that is not fully initialized yet - a consequence of a circular reference");
@@ -258,8 +259,7 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 		}
 
 		else {
-			// Fail if we're already creating this bean instance:
-			// We're assumably within a circular reference.
+			//判断是否是原型，如果是原型，不应该在初始化的时候创建
 			if (isPrototypeCurrentlyInCreation(beanName)) {
 				throw new BeanCurrentlyInCreationException(beanName);
 			}
@@ -315,8 +315,10 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 
 				// Create bean instance.
 				if (mbd.isSingleton()) {
+					//创建出对象 ,重点：getSingleton方法的第二个参数是一个lambda表达式，重点在createBean方法
 					sharedInstance = getSingleton(beanName, () -> {
 						try {
+							//重点：createBean是真正创建bean的方法 ctrl+alt+B查看实现方式
 							return createBean(beanName, mbd, args);
 						}
 						catch (BeansException ex) {
