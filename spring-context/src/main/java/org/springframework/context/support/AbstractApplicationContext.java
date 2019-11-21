@@ -314,6 +314,7 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 	@Override
 	public ConfigurableEnvironment getEnvironment() {
 		if (this.environment == null) {
+			//创建Environment
 			this.environment = createEnvironment();
 		}
 		return this.environment;
@@ -513,47 +514,110 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 
 	@Override
 	public void refresh() throws BeansException, IllegalStateException {
-		synchronized (this.startupShutdownMonitor) {
+			/**
+			 * startupShutdownMonitor属性：用于“刷新”和“销毁”的同步监视器，就是一个锁
+			 */
+			synchronized (this.startupShutdownMonitor) {
 
-			//准备工作包括设置启动时间，是否激活标识位，初始化属性源(property source)配置
+			/**
+			 * 准备工作包括设置启动时间，是否激活标识位，初始化属性源(property source)配置
+			 * 为刷新准备新的上下文环境，设置其启动日期和活动标志以及执行一些属性的初始化。（不是很重要）
+			 */
 			prepareRefresh();
 
-			//返回一个factory，为什么需要返回一个工厂？ 因为要对工厂进行初始化
+			/**
+			 * obtainFreshBeanFactory用于获取一个新的BeanFactory 为什么需要返回一个工厂？ 因为要对工厂进行初始化
+			 * obtainFreshBeanFactory会解析所有spring配置文件（通常我们会放在resources目录下），将所有spring配置文件中
+			 * 的bean定义封装成BeanDefination，加载到BeanFactory中。
+			 *
+			 * 如果解析到<context:component-scan base-backage="com....."/>注解时，会扫描base-package指定的目录，
+			 * 将该目录下使用指定注解（如@Controller，@Service，@Component，@Repository）的bean定义也同样封装成BeanDefination，
+			 * 加载BeanFactory中。
+			 *
+			 * “加载BeanFactory中”的内容主要指一下3个缓存：
+			 * 		1.beanDefinationNames缓存：所有被加载到BeanFactory中的bean的beanName集合
+			 * 		2.beanDefinationMap缓存：所有被加载到BeanFactory中的beanName和beanDefination映射
+			 * 		3.aliasMap缓存：所有被加载到BeanFactory中的bean的beanName和别名映射
+			 */
+			//重点：创建一个新的BeanFactory，读取和解析bean的定义
 			ConfigurableListableBeanFactory beanFactory = obtainFreshBeanFactory();
 
-			// 准备工厂
+			/**
+			 * 准备工厂
+			 * 配置beanFactory的标准上下文特征，例如上下文ClassLoader。后置处理器等。
+			 * prepareBeanFactory这个方法：
+			 * 			注册3个默认环境bean：environment，systemProperties和systemEnvironment，
+			 * 			注册2个bean后置处理器：ApplicationContextAwareProcessor和ApplicationListenerDetector
+			 */
 			prepareBeanFactory(beanFactory);
 
 			try {
-				// Allows post-processing of the bean factory in context subclasses.
+				/**
+				 * 允许子类对BeanFactory进行后续处理，默认实现为空，留给子类实现
+				 */
 				postProcessBeanFactory(beanFactory);
 
 				/**
-				 * 在spring的环境中去执行已经被注册的factory processors
-				 * 设置执行自定义的ProcessBeanFactory 和 spring内部自己定义的beanFactory
-				 * scan ---> put map ---> invokeBeanFactoryPostProcessor（自定义的和内置的）
+				 * 可以通过BeanDefinationRegistryPostProcessor来注册一些常规的BeanFactoryPostProcessor，
+				 * 因此此时所有常规的BeanFactoryPostProcessor都还没开始被处理
+				 * 实例化和调用所有BeanFactoryPostProcessor，包括其子类BeanDefinationRegistryPostProcessor
+				 *
+				 * 在spring的环境中去执行已经被注册的factory processors，设置执行自定义的ProcessBeanFactory 和 spring内部自己定义
+				 * 的beanFactory，scan ---> put map ---> invokeBeanFactoryPostProcessor（自定义的和内置的）
+				 *
+				 * BeanFactoryPostProcessor接口是spring初始化BeanFactory时对外暴露的扩展点，spring ioc容器允许beanFactoryPostProcessor
+				 * 在容器实例化任何bean之前读取bean的定义，并可以修改它
+				 *
+				 * BeanDefinationRegistryPostProcessor继承自BeanFactoryPostProcessor，比BeanFactoryPostProcessor具有更高的优先级，
+				 * 主要用来在常规的BeanFactoryPostProcessor激活之前注册一些bean定义
 				 */
+				//重点：提供给开发者对BeanFactory进行扩展
 				invokeBeanFactoryPostProcessors(beanFactory);
 
-				//注册beanPostProcessor
+				/**
+				 * 注册所有的beanPostProcessor，将所有实现了BeanPostProcessor接口的类加载到BeanFactory中
+				 * BeanPostProcessor接口是spring初始化bean时对外暴露的扩展点，spring ioc容器允许BeanPostProcessor在容器初始化bean的前后，
+				 * 添加自己的逻辑处理。在这边只是注册到BeanFactory中，具体调用是在bean初始化的时候
+				 *
+				 * 在所有bean实例化时，执行初始化方法前后会调用所有BeanPostProcessor的postProcessorBeforeInitialization方法，
+				 *                    执行初始化方法后会调用所有BeanPostProcessor的postProcessorAfterInitialization方法
+				 */
+				//重点：提供给开发者对bean进行扩展
 				registerBeanPostProcessors(beanFactory);
 
-				/*Initialize message source for this context.*/
+
+				/**
+				 * 初始化消息资源MessageSource
+				 */
 				initMessageSource();
 
-				//初始化应用事件广播器
+				/**
+				 * 初始化应用的事件广播器
+				 */
 				initApplicationEventMulticaster();
 
-				/*Initialize other special beans in specific context subclasses.*/
+				/**
+				 * 该方法为模板方法，提供给子类扩展实现，可以重写以添加特定于上下文的刷新工作，默认实现为空
+				 */
 				onRefresh();
 
 
+				/**
+				 * 注册监听器
+				 */
 				registerListeners();
 
-				//重点：执行完finishBeanFactoryInitialization，bean加载完了，new对象 单例
+				/**
+				 * 该方法会实例化所有剩余的非懒加载单例bean，
+				 * 除了一些内部的bean，实现了BeanFactoryPostProcessor接口的bean，实现了BeanPostProcessor接口的bean，
+				 * 其他的非懒加载单例bean都会在这个方法中被实例化，并且BeanPostProcessor的触发也是在这个放啊中
+				 */
+				//重点：执行完finishBeanFactoryInitialization，非懒加载单例bean实例化完了，new对象 单例
 				finishBeanFactoryInitialization(beanFactory);
 
-				// Last step: publish corresponding event.
+				/**
+				 * 完成此上下文的刷新，主要是推送上下文刷新完毕事件（ContextRefreshedEvent）到监听器
+				 */
 				finishRefresh();
 			}
 
