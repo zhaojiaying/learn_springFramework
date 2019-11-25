@@ -3,6 +3,7 @@ package com.source.learn.springApplication_lifecycleCallback;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.annotation.Lazy;
+import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Repository;
 
 /**
@@ -20,7 +21,7 @@ public class IndexDaoImpl implements IndexDao, InitializingBean, DisposableBean 
 		System.out.println("IndexDaoImpl # constructor...");
 	}
 
-	/**
+	/**constructor
 	 * 实现InitializingBean接口后的重写方法
 	 */
 	@Override
@@ -34,5 +35,11 @@ public class IndexDaoImpl implements IndexDao, InitializingBean, DisposableBean 
 	@Override
 	public void destroy() throws Exception {
 		System.out.println("IndexDaoImpl # destroy...");
+	}
+
+
+	@Override
+	public void test() {
+		System.out.println("IndexDaoImpl # test...");
 	}
 }

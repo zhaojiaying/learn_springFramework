@@ -10,7 +10,10 @@ import org.springframework.context.support.ClassPathXmlApplicationContext;
 public class IocXmlMain {
 
 	public static void main(String[] args) {
-		ClassPathXmlApplicationContext ac = new ClassPathXmlApplicationContext("applicationContext.xml");
+		/**
+		 * spring.xml和之前的applicationContext.xml是一样的，只是文件名不一样
+		 */
+		ClassPathXmlApplicationContext ac = new ClassPathXmlApplicationContext("spring.xml");
 		/*测试set方法注入*/
 		BClassService bClassService = (BClassService) ac.getBean("bClassService");
 		/*测试构造方法注入*/

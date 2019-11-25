@@ -19,7 +19,6 @@ import org.springframework.stereotype.Service;
  * @Date: 2019.10.26
  */
 @Configuration
-@ComponentScan(value = {"com.source.learn.ioc*","com.source.learn.*Callback"},
-		excludeFilters = @ComponentScan.Filter(type = FilterType.REGEX, pattern = "com.*.IndexService"))
+@ComponentScan(value = {"com.source.learn.ioc*","com.source.learn.*Callback"})
 public class IocConfig {
 }

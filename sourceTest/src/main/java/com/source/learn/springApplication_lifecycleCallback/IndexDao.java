@@ -5,4 +5,7 @@ package com.source.learn.springApplication_lifecycleCallback;
  * @Date: 2019.11.23
  */
 public interface IndexDao {
+
+	public void test();
+
 }
