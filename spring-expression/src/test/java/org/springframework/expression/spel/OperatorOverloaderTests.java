@@ -51,7 +51,6 @@ public class OperatorOverloaderTests extends AbstractExpressionTests {
 		assertEquals("abcnull",expr.getValue(eContext));
 	}
 
-
 	static class StringAndBooleanAddition implements OperatorOverloader {
 
 		@Override
