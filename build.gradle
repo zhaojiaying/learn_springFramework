@@ -1,6 +1,8 @@
 buildscript {
 	repositories {
-		maven { url "https://repo.spring.io/plugins-release" }
+		//maven { url "https://repo.spring.io/plugins-release" }
+		//spring官网在2020.11之后，默认匿名用户访问的情况下，spring-boot仓库有所调整
+		maven { url 'https://repo.spring.io/plugins-release-local' }
 	}
 	dependencies {
 		classpath("io.spring.gradle:propdeps-plugin:0.0.9.RELEASE")
@@ -148,7 +150,14 @@ configure(allprojects) { project ->
 
 	repositories {
 		maven { url "https://repo.spring.io/libs-release" }
+		// Gradle没有自己的中央仓库
+		// 先从本地maven仓库寻找依赖的jar包，存在则直接使用本地maven仓库的jar
 		mavenLocal()
+		// 本地maven仓库没有则从远程仓库下载jar包，并保存到 环境变量GRADLE_USER_HOME 配置的路径下
+		// 设置maven仓库阿里镜像地址
+		maven { url 'http://maven.aliyun.com/nexus/content/groups/public/' }
+		// 配置使用Maven的中央仓库
+		mavenCentral()
 	}
 
 	dependencies {
